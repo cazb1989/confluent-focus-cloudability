@@ -1,0 +1,4 @@
+boto3
+moto[s3,secretsmanager]>=5
+pytest
+cfn-lint

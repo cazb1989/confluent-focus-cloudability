@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Confluent Cloud Billing API -> FOCUS 1.1 -> S3 para IBM Cloudability (Custom Data / FOCUS Ingress).
+  Lambda diaria + EventBridge + permisos mínimos + alarma opcional por email.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Bucket S3 destino (Root Directory en Cloudability). Debe existir (deploy.sh lo crea).
+  CodeKey:
+    Type: String
+    Description: Key del zip de la Lambda dentro del bucket (deploy.sh lo sube).
+  SecretArn:
+    Type: String
+    Description: ARN del secret con {"api_key","api_secret"} de la Cloud API key de Confluent.
+  OrgId:
+    Type: String
+    Description: ID de la organización Confluent.
+  OrgName:
+    Type: String
+    Default: Confluent Cloud Organization
+  SubDir:
+    Type: String
+    Default: finops-demo
+  ManifestPrefix:
+    Type: String
+    Default: confluent-focus
+  ScheduleExpression:
+    Type: String
+    Default: cron(0 11 * * ? *)
+    Description: Por defecto 11:00 UTC (06:00 Lima) todos los días.
+  AlertEmail:
+    Type: String
+    Default: ""
+    Description: (Opcional) email para avisar si la Lambda falla.
+  AgentPrefix:
+    Type: String
+    Default: focus-agent
+    Description: Carpeta del archivo crudo para el FOCUS Agent.
+  CloudabilityAwsAccountId:
+    Type: String
+    Default: ""
+    Description: (FOCUS Agent) cuenta AWS de Cloudability que muestra el formulario "IAM role delegation".
+  CloudabilityExternalId:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: (FOCUS Agent) External ID que muestra el formulario.
+
+Conditions:
+  HasAlertEmail: !Not [!Equals [!Ref AlertEmail, ""]]
+  HasAgentRole: !And
+    - !Not [!Equals [!Ref CloudabilityAwsAccountId, ""]]
+    - !Not [!Equals [!Ref CloudabilityExternalId, ""]]
+
+Resources:
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: confluent-focus-export
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  - !Sub arn:${AWS::Partition}:s3:::${BucketName}/${SubDir}/*
+                  - !Sub arn:${AWS::Partition}:s3:::${BucketName}/${AgentPrefix}/*
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref SecretArn
+
+  ExportFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: confluent-focus-export
+      Description: Confluent Cloud costs -> FOCUS 1.1 drop para Cloudability
+      Runtime: python3.12
+      Handler: handler.lambda_handler
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: 300
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref BucketName
+        S3Key: !Ref CodeKey
+      Environment:
+        Variables:
+          SECRET_ARN: !Ref SecretArn
+          BUCKET: !Ref BucketName
+          SUB_DIR: !Ref SubDir
+          PREFIX: !Ref ManifestPrefix
+          ORG_ID: !Ref OrgId
+          ORG_NAME: !Ref OrgName
+          LOOKBACK_DAYS: "4"
+          AGENT_KEY: !Sub ${AgentPrefix}/confluent_costs_mtd.csv
+
+  FunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/confluent-focus-export
+      RetentionInDays: 30
+
+  DailySchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Ejecuta el export Confluent -> FOCUS una vez al día
+      ScheduleExpression: !Ref ScheduleExpression
+      State: ENABLED
+      Targets:
+        - Id: confluent-focus-export
+          Arn: !GetAtt ExportFunction.Arn
+
+  SchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ExportFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DailySchedule.Arn
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasAlertEmail
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmail
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlertEmail
+    Properties:
+      AlarmDescription: El export Confluent -> FOCUS falló
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ExportFunction
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+
+  FocusAgentReadRole:
+    Type: AWS::IAM::Role
+    Condition: HasAgentRole
+    Properties:
+      RoleName: CloudabilityFocusAgentReadRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { AWS: !Sub "arn:${AWS::Partition}:iam::${CloudabilityAwsAccountId}:root" }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { "sts:ExternalId": !Ref CloudabilityExternalId }
+      Policies:
+        - PolicyName: read-focus-agent-file
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub arn:${AWS::Partition}:s3:::${BucketName}/${AgentPrefix}/*
+              - Effect: Allow
+                Action: [s3:ListBucket, s3:GetBucketLocation]
+                Resource: !Sub arn:${AWS::Partition}:s3:::${BucketName}
+
+Outputs:
+  FocusAgentFile:
+    Value: !Sub s3://${BucketName}/${AgentPrefix}/confluent_costs_mtd.csv
+  FocusAgentRoleArn:
+    Condition: HasAgentRole
+    Value: !GetAtt FocusAgentReadRole.Arn
+  FunctionName:
+    Value: !Ref ExportFunction
+  CloudabilityRootDirectory:
+    Value: !Ref BucketName
+  CloudabilityManifestPrefix:
+    Value: !Ref ManifestPrefix

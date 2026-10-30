@@ -1,0 +1,162 @@
+{
+  "api_version": "v1",
+  "data": [
+    {
+      "amount": 0.1736,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "CONNECT_NUM_TASKS",
+      "network_access_type": "PUBLIC",
+      "original_amount": 0.1736,
+      "price": 0.03472222,
+      "product": "CONNECT",
+      "quantity": 5,
+      "resource": {
+        "display_name": "datagen-orders",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lcc-aaa111"
+      },
+      "start_date": "2026-10-29",
+      "unit": "Task-hour"
+    },
+    {
+      "amount": -7.8497,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "PROMO_CREDIT",
+      "original_amount": -7.8497,
+      "start_date": "2026-10-29"
+    },
+    {
+      "amount": 0.0003,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "CONNECT_THROUGHPUT",
+      "original_amount": 0.0003,
+      "price": 0.025,
+      "product": "CONNECT",
+      "quantity": 0.01074443943798542,
+      "resource": {
+        "display_name": "datagen-orders",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lcc-aaa111"
+      },
+      "start_date": "2026-10-29",
+      "unit": "GB"
+    },
+    {
+      "amount": 0.1736,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "CONNECT_NUM_TASKS",
+      "network_access_type": "PUBLIC",
+      "original_amount": 0.1736,
+      "price": 0.03472222,
+      "product": "CONNECT",
+      "quantity": 5,
+      "resource": {
+        "display_name": "datagen-users",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lcc-bbb222"
+      },
+      "start_date": "2026-10-29",
+      "unit": "Task-hour"
+    },
+    {
+      "amount": 0.0003,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "CONNECT_THROUGHPUT",
+      "original_amount": 0.0003,
+      "price": 0.025,
+      "product": "CONNECT",
+      "quantity": 0.010774962604045868,
+      "resource": {
+        "display_name": "datagen-users",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lcc-bbb222"
+      },
+      "start_date": "2026-10-29",
+      "unit": "GB"
+    },
+    {
+      "amount": 7.5,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "KAFKA_NUM_CKUS",
+      "network_access_type": "INTERNET",
+      "original_amount": 7.5,
+      "price": 0.75,
+      "product": "KAFKA",
+      "quantity": 10,
+      "resource": {
+        "display_name": "orders-cluster",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lkc-ccc333"
+      },
+      "start_date": "2026-10-29",
+      "unit": "CKU-hour"
+    },
+    {
+      "amount": 0.0008,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "KAFKA_NETWORK_READ",
+      "network_access_type": "INTERNET",
+      "original_amount": 0.0008,
+      "price": 0.05,
+      "product": "KAFKA",
+      "quantity": 0.015519809909164906,
+      "resource": {
+        "display_name": "orders-cluster",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lkc-ccc333"
+      },
+      "start_date": "2026-10-29",
+      "unit": "GB"
+    },
+    {
+      "amount": 0.0011,
+      "discount_amount": 0,
+      "end_date": "2026-10-30",
+      "granularity": "DAILY",
+      "line_type": "KAFKA_NETWORK_WRITE",
+      "network_access_type": "INTERNET",
+      "original_amount": 0.0011,
+      "price": 0.05,
+      "product": "KAFKA",
+      "quantity": 0.02150784619152546,
+      "resource": {
+        "display_name": "orders-cluster",
+        "environment": {
+          "id": "env-abc123"
+        },
+        "id": "lkc-ccc333"
+      },
+      "start_date": "2026-10-29",
+      "unit": "GB"
+    }
+  ],
+  "kind": "CostList",
+  "metadata": {
+    "next": ""
+  }
+}
