@@ -1,7 +1,3 @@
 build.zip
-out/
-__pycache__/
-*.pyc
-.pytest_cache/
-# respuestas crudas de la API (pueden contener IDs de tu organización)
-raw_*.json
+out.json
+.DS_Store

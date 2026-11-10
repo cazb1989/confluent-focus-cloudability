@@ -6,7 +6,7 @@ Esta solución lleva los costos de **Confluent Cloud** a **IBM Cloudability** us
 ```
                     ┌──────────────── Tu cuenta AWS ────────────────┐
 Confluent Cloud     │  EventBridge (diario)                          │      IBM Cloudability
-Billing API  ◄──────┼── Lambda confluent-focus-export ──► S3 bucket ─┼────►  Custom Data
+Billing API  ◄──────┼── Lambda confluent-focus-export ──► S3 bucket ─┼◄────  Custom Data
 /billing/v1/costs   │      │  (convierte a FOCUS 1.1)     (privado)   │      (FOCUS Ingress)
                     │      └─ Secrets Manager (API key)               │
                     └────────────────────────────────────────────────┘
